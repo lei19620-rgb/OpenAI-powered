@@ -1,0 +1,84 @@
+{
+  "courseID": "ielts-foundation",
+  "id": "ielts-day-01-homework",
+  "lessonSequence": 1,
+  "questions": [
+    {
+      "answer": {
+        "selectedOptionIDs": [
+          "a"
+        ]
+      },
+      "explanation": "Here, debate is uncountable, so the there-be construction uses is.",
+      "id": "q1",
+      "options": [
+        {
+          "id": "a",
+          "text": "is"
+        },
+        {
+          "id": "b",
+          "text": "are"
+        }
+      ],
+      "points": 1,
+      "prompt": "There ___ considerable debate about this issue.",
+      "required": true,
+      "type": "singleChoice"
+    },
+    {
+      "answer": {
+        "selectedOptionIDs": [
+          "a",
+          "b"
+        ]
+      },
+      "explanation": "Both react to and respond to describe a response. Select every correct option to earn points.",
+      "id": "q2",
+      "options": [
+        {
+          "id": "a",
+          "text": "react to"
+        },
+        {
+          "id": "b",
+          "text": "respond to"
+        },
+        {
+          "id": "c",
+          "text": "depend on"
+        }
+      ],
+      "points": 2,
+      "prompt": "Select the expressions that mean to respond.",
+      "required": true,
+      "type": "multipleChoice"
+    },
+    {
+      "answer": {
+        "acceptedTexts": [
+          "civilization"
+        ]
+      },
+      "explanation": "Answers are case-sensitive and whitespace-sensitive.",
+      "id": "q3",
+      "points": 1,
+      "prompt": "Enter the original word: civilization",
+      "required": true,
+      "type": "fillBlank"
+    },
+    {
+      "answer": {
+        "referenceText": "The if-clause states the condition: if a signal is detected."
+      },
+      "explanation": "Open responses are not automatically scored. A reference answer is shown for self-assessment.",
+      "id": "q4",
+      "points": 0,
+      "prompt": "Explain the role of the if-clause in your own words.",
+      "required": false,
+      "type": "openResponse"
+    }
+  ],
+  "schemaVersion": 1,
+  "title": "IELTS Day 01 Practice"
+}

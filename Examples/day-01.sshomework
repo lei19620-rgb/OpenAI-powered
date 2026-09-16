@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "id": "simple-study-day-01",
+  "title": "Day 01 Example Assignment",
+  "courseID": "ielts-sentence-lab",
+  "lessonSequence": 1,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "singleChoice",
+      "prompt": "There ___ considerable debate about this question.",
+      "options": [
+        {
+          "id": "a",
+          "text": "is"
+        },
+        {
+          "id": "b",
+          "text": "are"
+        }
+      ],
+      "answer": {
+        "selectedOptionIDs": [
+          "a"
+        ]
+      },
+      "explanation": "Here, debate is uncountable, so use there is.",
+      "points": 2,
+      "required": true
+    },
+    {
+      "id": "q2",
+      "type": "multipleChoice",
+      "prompt": "Select the structures in: There is debate over how to respond if we detect a signal.",
+      "options": [
+        {
+          "id": "a",
+          "text": "There-be construction"
+        },
+        {
+          "id": "b",
+          "text": "Conditional if-clause"
+        },
+        {
+          "id": "c",
+          "text": "Passive voice"
+        }
+      ],
+      "answer": {
+        "selectedOptionIDs": [
+          "a",
+          "b"
+        ]
+      },
+      "explanation": "The sentence includes there is and if we detect a signal.",
+      "points": 3,
+      "required": true
+    },
+    {
+      "id": "q3",
+      "type": "fillBlank",
+      "prompt": "Give a synonym for considerable in considerable debate.",
+      "answer": {
+        "acceptedTexts": [
+          "substantial",
+          "significant"
+        ]
+      },
+      "explanation": "Considerable means substantial or significant.",
+      "points": 2,
+      "required": true
+    },
+    {
+      "id": "q4",
+      "type": "openResponse",
+      "prompt": "Explain the relationship between the main clause and the if-clause.",
+      "answer": {
+        "referenceText": "The main clause raises how to respond; the if-clause states the condition under which a response is needed."
+      },
+      "explanation": "Compare your response with the reference answer for self-assessment.",
+      "points": 0,
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "entries": [
+    {
+      "definition": "Study again; evaluate",
+      "example": "I review the words every evening.",
+      "headword": "review",
+      "id": "review",
+      "isPhrase": false,
+      "partOfSpeech": "v./n.",
+      "pronunciation": "/rɪˈvjuː/",
+      "senses": [
+        {
+          "id": "review-v",
+          "partOfSpeech": "v.",
+          "translation": "\u590d\u4e60",
+          "englishDefinition": "to study something again"
+        },
+        {
+          "id": "review-n",
+          "partOfSpeech": "n.",
+          "translation": "\u8bc4\u8bba\uff1b\u5ba1\u67e5",
+          "englishDefinition": "a critical evaluation"
+        }
+      ],
+      "phrases": [
+        {
+          "id": "review-board",
+          "expression": "review board",
+          "kind": "phrase",
+          "partOfSpeech": "n.",
+          "translation": "\u5ba1\u67e5\u59d4\u5458\u4f1a"
+        }
+      ]
+    },
+    {
+      "definition": "\u5ba1\u67e5\u59d4\u5458\u4f1a",
+      "example": "The review board read the report.",
+      "headword": "review board",
+      "id": "review-board",
+      "isPhrase": true,
+      "partOfSpeech": "n.",
+      "pronunciation": ""
+    }
+  ],
+  "id": "dictionary-example",
+  "language": "en",
+  "schemaVersion": 1,
+  "title": "Example Dictionary"
+}

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Study AI Product"
+  short_description: "Study workflows, tasks, assignments, and sync"
+  default_prompt: "Use $simple-study-product to implement or review Study AI against its agreed product rules."
+
+policy:
+  allow_implicit_invocation: true

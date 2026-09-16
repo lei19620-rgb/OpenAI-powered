@@ -1,0 +1,38 @@
+{
+  "blocks": [
+    {
+      "id": "10000000-0000-0000-0000-000000000001",
+      "kind": "heading",
+      "placeholder": "",
+      "title": "📝Day {{day}}   📆{{date}}"
+    },
+    {
+      "id": "10000000-0000-0000-0000-000000000002",
+      "kind": "quote",
+      "placeholder": "",
+      "title": "• 📚Sentence"
+    },
+    {
+      "id": "10000000-0000-0000-0000-000000000003",
+      "kind": "quote",
+      "placeholder": "",
+      "title": "• 📔Words and Expressions"
+    },
+    {
+      "id": "10000000-0000-0000-0000-000000000004",
+      "kind": "quote",
+      "placeholder": "",
+      "title": "• 📝Grammar"
+    },
+    {
+      "id": "10000000-0000-0000-0000-000000000005",
+      "kind": "quote",
+      "placeholder": "",
+      "title": "• ✅Output"
+    }
+  ],
+  "details": "Daily Markdown notes with the day and date filled in when created",
+  "name": "Sentence Study",
+  "schemaVersion": 1,
+  "sourceVersion": 1
+}

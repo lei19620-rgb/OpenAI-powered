@@ -1,0 +1,20 @@
+.DS_Store
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+__pycache__/
+*.py[cod]
+
+# Personal/local dictionary binaries. These files are copied into the local
+# Xcode resource tree for a development build, but are not source-controlled
+# or redistributed with the repository.
+SimpleStudy/Resources/LocalDictionaries/*.eudic
+
+# Generated public dictionary index. Rebuild it from the documented source
+# packages with Tools/build_dictionary_index.py instead of committing a large
+# binary database to the repository.
+SimpleStudy/Resources/SimpleStudyDictionary.sqlite

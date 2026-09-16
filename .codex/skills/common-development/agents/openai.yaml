@@ -1,0 +1,7 @@
+interface:
+  display_name: "Common Development"
+  short_description: "Reusable engineering and delivery standards"
+  default_prompt: "Use $common-development to implement and verify this software change."
+
+policy:
+  allow_implicit_invocation: true

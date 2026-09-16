@@ -1,0 +1,61 @@
+{
+  "curriculumKey": "english-foundation",
+  "id": "example-courseware",
+  "schemaVersion": 1,
+  "title": "Vocabulary Basics Example",
+  "type": "vocabulary-courseware",
+  "units": [
+    {
+      "items": [
+        {
+          "example": "I prepare my notes before class.",
+          "key": "prepare",
+          "meaning": "Make ready; get ready",
+          "partOfSpeech": "v.",
+          "phoneticUK": "/prɪˈpeə(r)/",
+          "phoneticUS": "/prɪˈper/",
+          "tags": [
+            "Basics",
+            "Actions"
+          ],
+          "term": "prepare"
+        },
+        {
+          "example": "I review the words every evening.",
+          "key": "review",
+          "meaning": "Study again; evaluate",
+          "partOfSpeech": "v./n.",
+          "tags": [
+            "Basics",
+            "Learning"
+          ],
+          "term": "review"
+        }
+      ],
+      "key": "unit-01",
+      "sequence": 1,
+      "sourceLabel": "Example",
+      "title": "Group 1 · Everyday Actions",
+      "unitType": "group"
+    },
+    {
+      "items": [
+        {
+          "example": "I understand the sentence now.",
+          "key": "understand",
+          "meaning": "Grasp the meaning; comprehend",
+          "partOfSpeech": "v.",
+          "tags": [
+            "Basics",
+            "Understanding"
+          ],
+          "term": "understand"
+        }
+      ],
+      "key": "unit-02",
+      "sequence": 2,
+      "title": "Group 2 · Learning Expressions",
+      "unitType": "group"
+    }
+  ]
+}
