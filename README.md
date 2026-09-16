@@ -45,6 +45,7 @@
 - [Screenshots](#-screenshots)
 - [OpenAI integration](#-openai-integration)
 - [Privacy and data boundaries](#-privacy-and-data-boundaries)
+- [Privacy, identity, and license](#-privacy-identity-and-license)
 - [Supported formats](#-supported-formats)
 - [Build locally](#-build-locally)
 - [Repository map](#-repository-map)
@@ -261,7 +262,7 @@ Before changing behavior:
 
 ## 📄 Privacy, identity, and license
 
-Study AI is an independent project and is not affiliated with or endorsed by OpenAI, Apple, or LobeHub. The repository currently has no selected open-source license; all rights are reserved unless a license is added.
+Study AI is an independent project and is not affiliated with or endorsed by OpenAI, Apple, or LobeHub. The project is available under the [MIT License](LICENSE).
 
 The project identity is intentionally separate from the original app. Configure your own signing team, bundle identifier, CloudKit container, and privacy deployment details before distribution.
 
