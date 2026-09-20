@@ -45,6 +45,39 @@ final class ProductLogicTests: XCTestCase {
         )
     }
 
+    func testWorkflowPlannerPrioritizesRecoveryBeforeRoutineWork() {
+        let routine = TodoRecord(title: "Read the lesson", triggerKind: .manual)
+        let overdue = TodoRecord(
+            title: "Finish the exercise",
+            triggerKind: .scheduledTime,
+            scheduledAt: Date().addingTimeInterval(-3_600)
+        )
+        let failed = TodoRecord(title: "Prepare the materials", triggerKind: .manual)
+        failed.storedState = .partialFailure
+
+        let step = TodoWorkflowPlanner.nextStep(
+            activeTodos: [routine, overdue, failed],
+            allTodos: [routine, overdue, failed]
+        )
+
+        XCTAssertEqual(step?.todo.id, failed.id)
+        XCTAssertEqual(step?.state, .partialFailure)
+    }
+
+    func testWorkflowPlannerExplainsBlockedTask() {
+        let prerequisite = TodoRecord(title: "Read the lesson", triggerKind: .manual)
+        let dependent = TodoRecord(title: "Write the summary", triggerKind: .dependencyCompletion)
+        dependent.prerequisiteIDs = [prerequisite.id]
+
+        let step = TodoWorkflowPlanner.nextStep(
+            activeTodos: [dependent],
+            allTodos: [prerequisite, dependent]
+        )
+
+        XCTAssertEqual(step?.state, .waitingDependency)
+        XCTAssertEqual(step?.waitingFor, [prerequisite.title])
+    }
+
     func testDeletingTodoRemovesRecordAndUnlinksDependents() async throws {
         let persistence = PersistenceController(inMemory: true)
         let context = persistence.container.mainContext

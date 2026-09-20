@@ -33,6 +33,10 @@ struct TodayView: View {
         }
     }
 
+    private var nextStep: TodoWorkflowStep? {
+        TodoWorkflowPlanner.nextStep(activeTodos: activeTodos, allTodos: todos)
+    }
+
     private var waitingTodos: [TodoRecord] {
         activeTodos.filter { TodoStateResolver.state(for: $0, allTodos: todos) == .waitingDependency }
     }
@@ -45,12 +49,21 @@ struct TodayView: View {
         NavigationStack {
           ScrollViewReader { reader in
             List {
-                TodayHeader(activeCount: availableTodos.count, completedCount: completedTodos.filter {
+                TodayHeader(activeCount: activeTodos.count, readyCount: availableTodos.count, completedCount: completedTodos.filter {
                     $0.completedAt.map { Calendar.current.isDateInToday($0) } ?? false
                 }.count)
                     .todayListRow()
                 TodoHowItWorksCard { showsEditor = true }
                     .todayListRow()
+
+                if !showsCompletedHistory, let nextStep {
+                    TodayNextStepCard(step: nextStep) {
+                        showsWaiting = true
+                        showsUpcoming = true
+                        router.requestedTodoID = nextStep.todo.id
+                    }
+                    .todayListRow()
+                }
 
                 Picker("Task filter", selection: $showsCompletedHistory) {
                     Text("Pending · \(activeTodos.count)").tag(false)
@@ -231,7 +244,7 @@ private struct TodoHowItWorksCard: View {
     var body: some View {
         DisclosureGroup(isExpanded: $expanded) {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Choose a time and actions. Complete each task in the app to continue. Missed tasks carry forward instead of being skipped.")
+                Text("Set when it starts, what it does, and how it is completed. Waiting tasks unlock only after their prerequisites are finished.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Button("New task", action: create).buttonStyle(.bordered)
@@ -245,9 +258,72 @@ private struct TodoHowItWorksCard: View {
     }
 }
 
+private struct TodayNextStepCard: View {
+    let step: TodoWorkflowStep
+    let focus: () -> Void
+
+    private var detail: String {
+        switch step.state {
+        case .partialFailure:
+            return "An action needs attention before you continue."
+        case .runningActions:
+            return "Configured actions are running."
+        case .overdue:
+            return "Overdue, but it stays available until you complete it."
+        case .ready:
+            return "Ready when you are."
+        case .waitingDependency:
+            if step.waitingFor.isEmpty { return "Waiting for its prerequisites." }
+            return "Waiting for " + step.waitingFor.joined(separator: ", ") + "."
+        case .scheduled:
+            return "Scheduled for " + step.todo.originalScheduledAt.formatted(date: .abbreviated, time: .shortened) + "."
+        case .completed, .cancelled:
+            return "No further action needed."
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Label("Next step", systemImage: "arrow.forward.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppTheme.accent)
+                Spacer()
+                StatusBadge(state: step.state)
+            }
+
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: step.todo.kind.icon)
+                    .appIconBadge(size: 40, radius: 12)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(step.todo.title)
+                        .font(.headline)
+                    Text(detail)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                }
+            }
+
+            Button("View task", action: focus)
+                .buttonStyle(.borderedProminent)
+        }
+        .appCard()
+        .accessibilityElement(children: .contain)
+        .accessibilityHint("Shows this task in the Today list")
+    }
+}
+
 private struct TodayHeader: View {
     let activeCount: Int
+    let readyCount: Int
     let completedCount: Int
+
+    private var headline: String {
+        if activeCount == 0 { return "Make a little room for learning." }
+        if readyCount > 0 { return "\(readyCount) ready now" }
+        return "\(activeCount) planned"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -256,7 +332,7 @@ private struct TodayHeader: View {
                     Text(Date().formatted(.dateTime.month(.wide).day().weekday(.wide)))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Text(activeCount == 0 ? "Make a little room for learning." : "\(activeCount) ready now")
+                    Text(headline)
                         .font(.title2.weight(.semibold))
                 }
                 Spacer(minLength: 12)

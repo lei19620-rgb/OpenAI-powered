@@ -45,6 +45,77 @@ enum TodoStateResolver {
     }
 }
 
+struct TodoWorkflowStep {
+    let todo: TodoRecord
+    let state: TodoState
+    let waitingFor: [String]
+}
+
+@MainActor
+enum TodoWorkflowPlanner {
+    /// Selects one explainable next step without changing task state or
+    /// executing any configured action. The Today screen can use this as a
+    /// focus point while the task list remains the source of truth.
+    static func nextStep(
+        activeTodos: [TodoRecord],
+        allTodos: [TodoRecord],
+        now: Date = Date()
+    ) -> TodoWorkflowStep? {
+        let candidates = activeTodos.compactMap { todo -> (TodoRecord, TodoState)? in
+            let state = TodoStateResolver.state(for: todo, allTodos: allTodos, now: now)
+            guard state != .completed, state != .cancelled else { return nil }
+            return (todo, state)
+        }
+
+        guard let selected = candidates.sorted(by: isHigherPriority).first else { return nil }
+        let waitingFor = allTodos
+            .filter {
+                selected.1 == .waitingDependency &&
+                    selected.0.prerequisiteIDs.contains($0.id) &&
+                    $0.storedState != .completed &&
+                    $0.storedState != .cancelled
+            }
+            .sorted { $0.originalScheduledAt < $1.originalScheduledAt }
+            .map(\.title)
+        return TodoWorkflowStep(todo: selected.0, state: selected.1, waitingFor: waitingFor)
+    }
+
+    private static func isHigherPriority(
+        _ lhs: (TodoRecord, TodoState),
+        _ rhs: (TodoRecord, TodoState)
+    ) -> Bool {
+        let leftRank = rank(for: lhs.1)
+        let rightRank = rank(for: rhs.1)
+        if leftRank != rightRank { return leftRank < rightRank }
+
+        let leftDate = sortDate(for: lhs.0, state: lhs.1)
+        let rightDate = sortDate(for: rhs.0, state: rhs.1)
+        if leftDate != rightDate { return leftDate < rightDate }
+        return lhs.0.title.localizedCaseInsensitiveCompare(rhs.0.title) == .orderedAscending
+    }
+
+    private static func rank(for state: TodoState) -> Int {
+        switch state {
+        case .partialFailure: 0
+        case .runningActions: 1
+        case .overdue: 2
+        case .ready: 3
+        case .waitingDependency: 4
+        case .scheduled: 5
+        case .completed, .cancelled: 6
+        }
+    }
+
+    private static func sortDate(for todo: TodoRecord, state: TodoState) -> Date {
+        switch state {
+        case .overdue, .waitingDependency, .scheduled:
+            return todo.originalScheduledAt
+        default:
+            return todo.createdAt
+        }
+    }
+}
+
 @MainActor
 final class TodoActionEngine: ObservableObject {
     @Published private(set) var isRunning = false
