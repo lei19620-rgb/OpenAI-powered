@@ -128,6 +128,7 @@ enum TodoCompletionRule: String, Codable, CaseIterable, Identifiable {
     case lessonCompletion
     case vocabularyUnitCompletion
     case vocabularyCoursewareCompletion
+    case vocabularyReviewSession
 
     var id: String { rawValue }
 
@@ -137,7 +138,8 @@ enum TodoCompletionRule: String, Codable, CaseIterable, Identifiable {
         case .homeworkSubmission: "After submitting practice"
         case .lessonCompletion: "After finishing the lesson"
         case .vocabularyUnitCompletion: "After studying the word group"
-        case .vocabularyCoursewareCompletion: "After studying the word collection"
+        case .vocabularyCoursewareCompletion: "After first studying the word collection"
+        case .vocabularyReviewSession: "After finishing a word review session"
         }
     }
 }

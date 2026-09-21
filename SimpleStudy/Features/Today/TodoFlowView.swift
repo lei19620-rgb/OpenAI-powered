@@ -230,7 +230,7 @@ struct TodoFlowView: View {
         case .manual: "hand.tap"
         case .homeworkSubmission: "pencil.and.list.clipboard"
         case .lessonCompletion: "book.pages"
-        case .vocabularyUnitCompletion, .vocabularyCoursewareCompletion: "character.book.closed"
+        case .vocabularyUnitCompletion, .vocabularyCoursewareCompletion, .vocabularyReviewSession: "character.book.closed"
         }
     }
 
@@ -516,6 +516,8 @@ private extension TodoCompletionRule {
             "The task completes when every word in the target unit has received its first study rating."
         case .vocabularyCoursewareCompletion:
             "The task completes when every unit in the collection has been studied once."
+        case .vocabularyReviewSession:
+            "Finish a nonempty review session in the linked collection or unit. Each repeating occurrence needs fresh practice."
         }
     }
 }

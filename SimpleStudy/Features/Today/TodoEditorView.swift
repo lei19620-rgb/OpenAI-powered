@@ -89,6 +89,7 @@ struct TodoEditorView: View {
         kind == .vocabulary ||
         completionRule == .vocabularyUnitCompletion ||
         completionRule == .vocabularyCoursewareCompletion ||
+        completionRule == .vocabularyReviewSession ||
         actions.contains { $0.isEnabled && $0.kind == .openVocabularyReview }
     }
 
@@ -122,7 +123,11 @@ struct TodoEditorView: View {
         if completionRule == .homeworkSubmission && selectedHomeworkID == nil {
             return "Select the assignment whose submission completes this task."
         }
-        if completionRule == .vocabularyCoursewareCompletion && selectedVocabularyCoursewareID == nil {
+        if trigger == .scheduledTime && recurrence != .none &&
+            (completionRule == .vocabularyUnitCompletion || completionRule == .vocabularyCoursewareCompletion) {
+            return "First learning happens once. Choose a word review session for a repeating task."
+        }
+        if (completionRule == .vocabularyCoursewareCompletion || completionRule == .vocabularyReviewSession) && selectedVocabularyCoursewareID == nil {
             return "Select the word collection that completes this task."
         }
         if completionRule == .vocabularyUnitCompletion,
@@ -444,7 +449,8 @@ struct TodoEditorView: View {
         case .homeworkSubmission: "After submitting practice"
         case .lessonCompletion: "After finishing the lesson"
         case .vocabularyUnitCompletion: "After studying the word unit"
-        case .vocabularyCoursewareCompletion: "After studying the whole collection"
+        case .vocabularyCoursewareCompletion: "After first studying the whole collection"
+        case .vocabularyReviewSession: "After finishing a word review session"
         }
         let after = actionSummary(for: .completion)
         return completionActionIndices.isEmpty ? base : "\(base) · \(after)"
@@ -462,6 +468,8 @@ struct TodoEditorView: View {
             "Complete after every word in this unit receives its first rating. Difficult words remain scheduled for review."
         case .vocabularyCoursewareCompletion:
             "Complete after every unit has been studied once. Reviews never reopen completed tasks."
+        case .vocabularyReviewSession:
+            "Complete after a nonempty review session in this collection or unit. Repeating tasks require a new session on their scheduled day or later."
         }
     }
 

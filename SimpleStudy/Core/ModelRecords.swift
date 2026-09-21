@@ -27,6 +27,8 @@ final class TodoRecord {
     var actionsData: Data = Data()
     var alarmStateRaw: String = AlarmRegistrationState.notRequested.rawValue
     var lastActionError: String?
+    // Durable evidence for a completed vocabulary session, separate from task readiness.
+    var learningEvidenceAt: Date?
 
     init(
         title: String,

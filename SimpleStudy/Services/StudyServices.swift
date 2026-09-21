@@ -125,6 +125,17 @@ enum CourseProgressService {
     static func complete(_ workspace: StudyWorkspaceRecord, context: ModelContext) throws {
         let courses = try context.fetch(FetchDescriptor<CourseRecord>())
         let workspaces = try context.fetch(FetchDescriptor<StudyWorkspaceRecord>())
+        // Bind unassigned lesson tasks before advancing the course pointer.
+        // This association survives a crash between saving progress and actions.
+        if let course = courses.first(where: { $0.id == workspace.courseID }),
+           workspace.sequence == course.currentSequence {
+            for todo in try context.fetch(FetchDescriptor<TodoRecord>()) where
+                todo.storedState != .completed && todo.storedState != .cancelled &&
+                todo.completionRule == .lessonCompletion && todo.workspaceID == nil &&
+                todo.courseID == course.id && LearningCompletionService.accepts(Date(), for: todo) {
+                todo.workspaceID = workspace.id
+            }
+        }
         workspace.isCompleted = true
         workspace.completedAt = workspace.completedAt ?? Date()
         if let course = courses.first(where: { $0.id == workspace.courseID }) {

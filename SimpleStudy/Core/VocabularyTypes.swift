@@ -412,7 +412,7 @@ enum VocabularySpacedRepetition {
             nextInterval = tenMinutes
         case .fuzzy:
             nextInterval = previousInterval > 0
-                ? max(oneDay, previousInterval * 1.5)
+                ? max(tenMinutes, min(oneDay, previousInterval * 0.5))
                 : oneDay
         case .known:
             nextInterval = previousInterval > 0

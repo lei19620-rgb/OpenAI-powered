@@ -410,7 +410,8 @@ enum VocabularyReviewService {
         rating: VocabularyRating,
         for item: VocabularyItemRecord,
         context: ModelContext,
-        now: Date = Date()
+        now: Date = Date(),
+        completingSession: VocabularySessionScope? = nil
     ) throws -> VocabularyReviewOutcome {
         let units = try context.fetch(FetchDescriptor<VocabularyUnitRecord>())
         guard item.isActive, let unit = units.first(where: { $0.id == item.unitID && $0.isActive }) else {
@@ -463,7 +464,14 @@ enum VocabularyReviewService {
             previousIntervalSeconds: snapshot.intervalSeconds,
             nextIntervalSeconds: schedule.intervalSeconds
         ))
-        do { try context.save() } catch { context.rollback(); throw error }
+        do {
+            if let scope = completingSession {
+                try LearningCompletionService.recordVocabularySession(
+                    coursewareID: scope.coursewareID, unitID: scope.unitID, at: now, context: context
+                )
+            }
+            try context.save()
+        } catch { context.rollback(); throw error }
 
         return VocabularyReviewOutcome(
             item: item,

@@ -479,6 +479,7 @@ private struct TodoCard: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
+            earlyLearningButton
         } else if state == .runningActions {
             ProgressView("Running…").font(.subheadline)
         } else if todo.storedState == .partialFailure {
@@ -492,9 +493,10 @@ private struct TodoCard: View {
                 }
             }
         } else if state == .scheduled {
-            Label("Waiting for scheduled time", systemImage: "clock")
+            Label("Task completes after its scheduled time", systemImage: "clock")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+            earlyLearningButton
         } else if hasPendingActivationActions {
             Button("Start") {
                 Task { await actionEngine.activate(todo: todo, context: modelContext) }
@@ -506,19 +508,29 @@ private struct TodoCard: View {
     }
 
     @ViewBuilder
+    private var earlyLearningButton: some View {
+        if todo.completionRule != .manual {
+            Button("Study ahead") { actionEngine.openLearningContent(todo: todo, context: modelContext) }
+                .buttonStyle(.bordered)
+                .disabled(actionEngine.isRunning)
+        }
+    }
+
+    @ViewBuilder
     private var completionButton: some View {
         if todo.completionRule == .homeworkSubmission {
             Button("Start practice") { router.openHomework(homeworkID: todo.homeworkID) }
                 .buttonStyle(.borderedProminent)
         } else if todo.completionRule == .lessonCompletion {
-            Button("Start studying") { router.openStudy(workspaceID: todo.workspaceID) }
+            Button("Start studying") { actionEngine.openLearningContent(todo: todo, context: modelContext) }
                 .buttonStyle(.borderedProminent)
         } else if todo.completionRule == .vocabularyUnitCompletion ||
-                  todo.completionRule == .vocabularyCoursewareCompletion {
+                  todo.completionRule == .vocabularyCoursewareCompletion ||
+                  todo.completionRule == .vocabularyReviewSession {
             Button("Study words") {
                 router.openVocabulary(
                     coursewareID: todo.vocabularyCoursewareID,
-                    unitID: todo.completionRule == .vocabularyUnitCompletion ? todo.vocabularyUnitID : nil
+                    unitID: todo.completionRule == .vocabularyCoursewareCompletion ? nil : todo.vocabularyUnitID
                 )
             }
             .buttonStyle(.borderedProminent)

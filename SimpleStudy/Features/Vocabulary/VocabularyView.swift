@@ -626,7 +626,9 @@ struct VocabularyReviewView: View {
     @State private var currentIndex = 0
     @State private var isPrepared = false
     @State private var isAnswerShown = false
-    @State private var weakCount = 0
+    @State private var weakIDs: Set<UUID> = []
+    @State private var repeatedIDs: Set<UUID> = []
+    @State private var reviewedIDs: Set<UUID> = []
     @State private var errorMessage: String?
     @State private var finishedAt: Date?
 
@@ -645,8 +647,8 @@ struct VocabularyReviewView: View {
         Group {
             if finishedAt != nil {
                 VocabularyReviewSummary(
-                    reviewedCount: queue.count,
-                    weakCount: weakCount,
+                    reviewedCount: reviewedIDs.count,
+                    weakCount: weakIDs.count,
                     dismiss: dismiss.callAsFunction
                 )
             } else if let currentItem {
@@ -766,6 +768,7 @@ struct VocabularyReviewView: View {
             queue = try VocabularyReviewService
                 .itemsDue(in: coursewareID, unitID: unitID, context: modelContext)
                 .filter { mode == .all || (mode == .newWords ? $0.firstLearnedAt == nil : $0.firstLearnedAt != nil) }
+                .prefix(VocabularySessionPlanner.batchSize)
                 .map(\.id)
             isPrepared = true
         } catch {
@@ -780,12 +783,24 @@ struct VocabularyReviewView: View {
 
     private func record(_ rating: VocabularyRating, item: VocabularyItemRecord) {
         do {
+            let nextQueue = VocabularySessionPlanner.queueAfterRating(
+                rating, itemID: item.id, queue: queue, index: currentIndex, repeatedIDs: repeatedIDs
+            )
+            let completesSession = currentIndex + 1 >= nextQueue.count
             let outcome = try VocabularyReviewService.record(
                 rating: rating,
                 for: item,
-                context: modelContext
+                context: modelContext,
+                completingSession: completesSession ? VocabularySessionScope(coursewareID: coursewareID, unitID: unitID) : nil
             )
-            if rating == .notKnown || rating == .fuzzy { weakCount += 1 }
+            if nextQueue.count > queue.count { repeatedIDs.insert(item.id) }
+            queue = nextQueue
+            reviewedIDs.insert(item.id)
+            if rating == .notKnown || rating == .fuzzy {
+                weakIDs.insert(item.id)
+            } else {
+                weakIDs.remove(item.id)
+            }
 
             if outcome.unitDidComplete || outcome.coursewareDidComplete {
                 Task {
@@ -808,7 +823,10 @@ struct VocabularyReviewView: View {
 
             currentIndex += 1
             isAnswerShown = false
-            if currentIndex >= queue.count { finishedAt = Date() }
+            if currentIndex >= queue.count {
+                finishedAt = Date()
+                Task { await actionEngine.reconcileLearningCompletion(context: modelContext) }
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -825,9 +843,12 @@ private struct VocabularyReviewSummary: View {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 54))
                 .foregroundStyle(.green)
-            Text("Review complete")
+            Text("Session complete")
                 .font(.title.bold())
-            Text("Reviewed \(reviewedCount) entries" + (weakCount == 0 ? "." : " · \(weakCount) will return sooner."))
+            Text("Practiced \(reviewedCount) words" + (weakCount == 0 ? "." : " · \(weakCount) still need practice."))
+            Text("Progress saved. First learning is not the same as mastery; future reviews follow your ratings.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Button("Back to Words") { dismiss() }

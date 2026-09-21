@@ -127,6 +127,7 @@ final class TodoActionEngine: ObservableObject {
     private let alarmClient: any SystemAlarmClient
     private var executionWaiters: [CheckedContinuation<Void, Never>] = []
     private var isRefreshing = false
+    private var isReconcilingLearning = false
 
     init(alarmClient: (any SystemAlarmClient)? = nil) {
         self.alarmClient = alarmClient ?? AlarmService()
@@ -171,6 +172,10 @@ final class TodoActionEngine: ObservableObject {
         guard !isRunning else { return }
         let todos = (try? context.fetch(FetchDescriptor<TodoRecord>())) ?? []
         for todo in todos where todo.storedState != .completed && todo.storedState != .cancelled && todo.storedState != .partialFailure {
+            if todo.recurrence != .none && todo.occurrenceIndex > 0 &&
+                [.vocabularyUnitCompletion, .vocabularyCoursewareCompletion].contains(todo.completionRule) {
+                todo.completionRule = .vocabularyReviewSession
+            }
             if todo.storedState == .runningActions {
                 // A previous process ended mid-action. Successful actions retain
                 // their idempotency keys; interrupted actions require a retry.
@@ -208,8 +213,36 @@ final class TodoActionEngine: ObservableObject {
                 await activate(todo: todo, context: context, allowsNavigation: false)
             }
         }
+        await reconcileLearningCompletion(context: context)
         await syncTodoReminders(context: context)
         await syncTodoNotifications(context: context)
+    }
+
+    /// Recheck persisted results after relaunch, time changes, and dependency
+    /// completion. A bounded fixed point handles chains in any fetch order.
+    func reconcileLearningCompletion(context: ModelContext) async {
+        guard !isReconcilingLearning else { return }
+        isReconcilingLearning = true
+        defer { isReconcilingLearning = false }
+        do {
+            let candidates = try context.fetch(FetchDescriptor<TodoRecord>())
+            var madeProgress = true
+            var remainingPasses = candidates.count
+            while madeProgress && remainingPasses > 0 {
+                madeProgress = false
+                remainingPasses -= 1
+                let allTodos = try context.fetch(FetchDescriptor<TodoRecord>())
+                for todo in candidates {
+                    let state = TodoStateResolver.state(for: todo, allTodos: allTodos)
+                    guard state == .ready || state == .overdue,
+                          try LearningCompletionService.hasEvidence(for: todo, context: context) else { continue }
+                    await complete(todo: todo, context: context, allowsNavigation: false)
+                    if todo.storedState == .completed { madeProgress = true }
+                }
+            }
+        } catch {
+            operationError = "Unable to reconcile saved learning progress. Your results are kept; try again: \(error.localizedDescription)"
+        }
     }
 
     func prepareScheduledActions(todo: TodoRecord, context: ModelContext) async {
@@ -225,6 +258,29 @@ final class TodoActionEngine: ObservableObject {
 
     func consumeNavigationRequest() {
         navigationRequest = nil
+    }
+
+    /// Opening learning content is not activation: it never runs reminders,
+    /// shortcuts, or completion effects and does not bypass task readiness.
+    func openLearningContent(todo: TodoRecord, context: ModelContext) {
+        guard !isRunning else { return }
+        do {
+            switch todo.completionRule {
+            case .lessonCompletion:
+                let workspace = try ensureWorkspace(for: todo, preferredCourseID: todo.courseID, context: context)
+                try context.save()
+                navigationRequest = .study(workspace.id)
+            case .homeworkSubmission:
+                navigationRequest = .homework(todo.homeworkID)
+            case .vocabularyUnitCompletion, .vocabularyCoursewareCompletion, .vocabularyReviewSession:
+                navigationRequest = .vocabulary(coursewareID: todo.vocabularyCoursewareID, unitID: todo.vocabularyUnitID)
+            case .manual:
+                break
+            }
+        } catch {
+            context.rollback()
+            operationError = "Unable to open learning content: \(error.localizedDescription)"
+        }
     }
 
     func processPendingDeviceAlarms(context: ModelContext) async {
@@ -302,20 +358,28 @@ final class TodoActionEngine: ObservableObject {
         await execute(todo: todo, phase: .activation, context: context, completeAfterSuccess: false, allowsNavigation: allowsNavigation)
     }
 
-    func complete(todo: TodoRecord, context: ModelContext) async {
+    func complete(todo: TodoRecord, context: ModelContext, allowsNavigation: Bool = true) async {
         // Business events and buttons use the same dependency/time gate.
         let todos = (try? context.fetch(FetchDescriptor<TodoRecord>())) ?? []
         let state = TodoStateResolver.state(for: todo, allTodos: todos)
         guard state != .waitingDependency, state != .scheduled,
               state != .completed, state != .cancelled else { return }
+        if todo.completionRule != .manual {
+            do {
+                guard try LearningCompletionService.hasEvidence(for: todo, context: context) else { return }
+            } catch {
+                operationError = "Unable to read saved learning progress: \(error.localizedDescription)"
+                return
+            }
+        }
         if todo.actions.contains(where: {
             $0.phase == .activation && $0.isEnabled &&
             ($0.state == .pending || $0.state == .running || ($0.state == .failed && $0.isCritical))
         }) {
-            await activate(todo: todo, context: context)
+            await activate(todo: todo, context: context, allowsNavigation: allowsNavigation)
             guard !todo.actions.contains(where: { $0.phase == .activation && $0.isEnabled && $0.isCritical && $0.state == .failed }) else { return }
         }
-        await execute(todo: todo, phase: .completion, context: context, completeAfterSuccess: true)
+        await execute(todo: todo, phase: .completion, context: context, completeAfterSuccess: true, allowsNavigation: allowsNavigation)
         if todo.storedState == .completed {
             await NotificationService.cancel(todoID: todo.id)
             await TodoReminderService.markCompleted(todoID: todo.id, context: context)
@@ -921,9 +985,10 @@ final class TodoActionEngine: ObservableObject {
             if state == .scheduled {
                 await prepareScheduledActions(todo: candidate, context: context)
             } else {
-                await activate(todo: candidate, context: context)
+                await activate(todo: candidate, context: context, allowsNavigation: false)
             }
         }
+        await reconcileLearningCompletion(context: context)
     }
 
     private func markCompleted(_ todo: TodoRecord, context: ModelContext) {
@@ -987,8 +1052,12 @@ final class TodoActionEngine: ObservableObject {
             successor.occurrenceIndex = nextIndex
             successor.recurrence = todo.recurrence
             successor.missedPolicy = todo.missedPolicy
-            successor.completionRule = todo.completionRule
+            // Initial exposure is a one-time milestone, not a recurring goal.
+            // Existing recurring vocabulary tasks continue as review sessions.
+            successor.completionRule = [.vocabularyUnitCompletion, .vocabularyCoursewareCompletion].contains(todo.completionRule)
+                ? .vocabularyReviewSession : todo.completionRule
             successor.courseID = todo.courseID
+            if todo.completionRule == .homeworkSubmission { successor.homeworkID = todo.homeworkID }
             successor.vocabularyCoursewareID = todo.vocabularyCoursewareID
             successor.vocabularyUnitID = todo.vocabularyUnitID
             successor.prerequisiteIDs = [previousID]

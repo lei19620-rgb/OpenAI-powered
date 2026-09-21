@@ -664,7 +664,10 @@ final class ProductLogicTests: XCTestCase {
         let persistence = PersistenceController(inMemory: true)
         let context = persistence.container.mainContext
         let coursewareID = UUID()
-        let unitID = UUID()
+        let unit = VocabularyUnitRecord(coursewareID: coursewareID, unitKey: "unit", sequence: 1, title: "Unit")
+        unit.completedAt = Date()
+        context.insert(unit)
+        let unitID = unit.id
         let todo = TodoRecord(title: "Complete vocabulary unit", triggerKind: .manual)
         todo.completionRule = .vocabularyUnitCompletion
         todo.vocabularyCoursewareID = coursewareID
